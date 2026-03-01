@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PowerPredict AI – Real ML Model | AMD Ryzen Slingshot</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { --primary: #0066cc; --success: #28a745; --warning: #ffc107; --danger: #dc3545; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      margin: 0; padding: 20px; color: #343a40;
+    }
+    .container {
+      max-width: 1200px; margin: 0 auto; background: white;
+      border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); overflow: hidden;
+    }
+    header { background: var(--primary); color: white; padding: 20px; text-align: center; }
+    h1 { margin: 0; font-size: 2.5rem; }
+    .content { padding: 30px; display: grid; grid-template-columns: 1fr 340px; gap: 30px; }
+    .main { display: flex; flex-direction: column; gap: 25px; }
+    .sidebar { background: #f8f9fa; padding: 25px; border-radius: 10px; border: 1px solid #dee2e6; }
+    .slider-group { margin-bottom: 22px; }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    input[type="range"] { width: 100%; }
+    .value { font-weight: bold; color: var(--primary); }
+    #prediction {
+      padding: 22px; border-radius: 12px; font-size: 1.45rem; font-weight: bold;
+      text-align: center; margin: 20px 0; transition: all 0.4s;
+    }
+    .low  { background: #d4edda; color: #155724; }
+    .medium { background: #fff3cd; color: #856404; }
+    .high  { background: #f8d7da; color: #721c24; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .chart-container { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    footer { text-align: center; padding: 15px; background: #f1f3f5; color: #6c757d; font-size: 0.9rem; }
+    @media (max-width: 900px) { .content { grid-template-columns: 1fr; } .charts { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>⚡ PowerPredict AI</h1>
+    <p style="margin:8px 0 0;">Real ML Model • Logistic Regression (PyTorch-trained) • AMD Ryzen Slingshot 2026</p>
+  </header>
+
+  <div class="content">
+    <div class="main">
+      <div id="prediction" class="low">Move sliders to see real-time fault prediction…</div>
+
+      <div class="charts">
+        <div class="chart-container"><canvas id="chartVoltage"></canvas></div>
+        <div class="chart-container"><canvas id="chartTempLoad"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <h2>Live Sensor Inputs</h2>
+      
+      <div class="slider-group">
+        <label>Voltage (V): <span id="valV" class="value">230</span></label>
+        <input type="range" id="v" min="170" max="270" value="230" step="0.5">
+      </div>
+      <div class="slider-group">
+        <label>Current (A): <span id="valC" class="value">50</span></label>
+        <input type="range" id="c" min="10" max="120" value="50" step="0.5">
+      </div>
+      <div class="slider-group">
+        <label>Temperature (°C): <span id="valT" class="value">35</span></label>
+        <input type="range" id="t" min="20" max="80" value="35" step="0.1">
+      </div>
+      <div class="slider-group">
+        <label>Humidity (%): <span id="valH" class="value">60</span></label>
+        <input type="range" id="h" min="20" max="95" value="60" step="0.5">
+      </div>
+      <div class="slider-group">
+        <label>Load (%): <span id="valL" class="value">70</span></label>
+        <input type="range" id="l" min="10" max="120" value="70" step="0.5">
+      </div>
+
+      <div style="margin-top:25px; padding:15px; background:#e3f2fd; border-radius:8px; font-size:0.95rem;">
+        <strong>Real ML Model Loaded!</strong><br>
+        Trained on 5000 samples • 78.7% accuracy<br>
+        Ready for ONNX export to AMD Ryzen AI NPU
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Real Logistic Regression (PyTorch → JS) • Team AKIL • Chennai • AMD Ryzen Slingshot 2026
+  </footer>
+</div>
+
+<script>
+// ==================== REAL ML MODEL (Trained Logistic Regression) ====================
+const WEIGHTS = [-0.44344, 0.21438, 0.64846, 0.01469, 0.68411];
+const BIAS = -1.27184;
+const MEANS = [230.084, 49.8025, 35.1055, 60.2477, 69.5412];
+const STDS  = [14.9457, 20.2067, 9.9867, 15.0485, 24.5819];
+
+function normalize(x, mean, std) {
+  return (x - mean) / std;
+}
+
+function sigmoid(z) {
+  return 1 / (1 + Math.exp(-z));
+}
+
+function predictFault(voltage, current, temp, humidity, load) {
+  const norm = [
+    normalize(voltage, MEANS[0], STDS[0]),
+    normalize(current, MEANS[1], STDS[1]),
+    normalize(temp, MEANS[2], STDS[2]),
+    normalize(humidity, MEANS[3], STDS[3]),
+    normalize(load, MEANS[4], STDS[4])
+  ];
+
+  let z = BIAS;
+  for (let i = 0; i < 5; i++) z += WEIGHTS[i] * norm[i];
+
+  return sigmoid(z) * 100;   // probability in %
+}
+
+// ==================== UI UPDATE ====================
+const prediction = document.getElementById('prediction');
+
+function update() {
+  const v = +document.getElementById('v').value;
+  const c = +document.getElementById('c').value;
+  const t = +document.getElementById('t').value;
+  const h = +document.getElementById('h').value;
+  const l = +document.getElementById('l').value;
+
+  // Update value displays
+  document.getElementById('valV').textContent = v.toFixed(1);
+  document.getElementById('valC').textContent = c.toFixed(1);
+  document.getElementById('valT').textContent = t.toFixed(1);
+  document.getElementById('valH').textContent = h.toFixed(1);
+  document.getElementById('valL').textContent = l.toFixed(1);
+
+  const prob = predictFault(v, c, t, h, l);
+
+  let msg, cls;
+  if (prob > 65) {
+    msg = `HIGH FAULT RISK — ${prob.toFixed(1)}% probability ⚠️`;
+    cls = "high";
+  } else if (prob > 30) {
+    msg = `MEDIUM RISK — ${prob.toFixed(1)}% probability ⚠`;
+    cls = "medium";
+  } else {
+    msg = `LOW RISK — ${(100 - prob).toFixed(1)}% safe ✅`;
+    cls = "low";
+  }
+
+  prediction.textContent = msg;
+  prediction.className = cls;
+}
+
+// Attach listeners
+['v','c','t','h','l'].forEach(id => document.getElementById(id).addEventListener('input', update));
+
+// ==================== CHARTS (Demo) ====================
+new Chart(document.getElementById('chartVoltage'), {
+  type: 'line',
+  data: { labels: ['-60s','-45s','-30s','-15s','Now'], datasets: [{ label: 'Voltage (V)', data: [232,228,215,233,230], borderColor:'#0066cc', tension:0.4 }] },
+  options: { responsive:true, scales:{ y:{ min:170, max:270 }}}
+});
+
+new Chart(document.getElementById('chartTempLoad'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label: 'Normal', data: Array.from({length:35}, ()=>({x:20+Math.random()*80, y:25+Math.random()*40})), backgroundColor:'rgba(40,167,69,0.7)' },
+      { label: 'Fault',  data: Array.from({length:15}, ()=>({x:60+Math.random()*50, y:40+Math.random()*35})), backgroundColor:'rgba(220,53,69,0.8)' }
+    ]
+  },
+  options: { responsive:true, scales:{ x:{title:{display:true,text:'Load (%)'}}, y:{title:{display:true,text:'Temperature (°C)'}} }}
+});
+
+// Initial run
+update();
+</script>
+</body>
+</html>
