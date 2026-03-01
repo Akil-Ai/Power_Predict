@@ -94,7 +94,7 @@
 </div>
 
 <script>
-// ==================== REAL ML MODEL (Trained Logistic Regression) ====================
+
 const WEIGHTS = [-0.44344, 0.21438, 0.64846, 0.01469, 0.68411];
 const BIAS = -1.27184;
 const MEANS = [230.084, 49.8025, 35.1055, 60.2477, 69.5412];
@@ -120,10 +120,10 @@ function predictFault(voltage, current, temp, humidity, load) {
   let z = BIAS;
   for (let i = 0; i < 5; i++) z += WEIGHTS[i] * norm[i];
 
-  return sigmoid(z) * 100;   // probability in %
+  return sigmoid(z) * 100;   
 }
 
-// ==================== UI UPDATE ====================
+
 const prediction = document.getElementById('prediction');
 
 function update() {
@@ -133,7 +133,7 @@ function update() {
   const h = +document.getElementById('h').value;
   const l = +document.getElementById('l').value;
 
-  // Update value displays
+  
   document.getElementById('valV').textContent = v.toFixed(1);
   document.getElementById('valC').textContent = c.toFixed(1);
   document.getElementById('valT').textContent = t.toFixed(1);
@@ -158,10 +158,10 @@ function update() {
   prediction.className = cls;
 }
 
-// Attach listeners
+
 ['v','c','t','h','l'].forEach(id => document.getElementById(id).addEventListener('input', update));
 
-// ==================== CHARTS (Demo) ====================
+
 new Chart(document.getElementById('chartVoltage'), {
   type: 'line',
   data: { labels: ['-60s','-45s','-30s','-15s','Now'], datasets: [{ label: 'Voltage (V)', data: [232,228,215,233,230], borderColor:'#0066cc', tension:0.4 }] },
@@ -179,8 +179,9 @@ new Chart(document.getElementById('chartTempLoad'), {
   options: { responsive:true, scales:{ x:{title:{display:true,text:'Load (%)'}}, y:{title:{display:true,text:'Temperature (°C)'}} }}
 });
 
-// Initial run
+
 update();
 </script>
 </body>
+
 </html>
